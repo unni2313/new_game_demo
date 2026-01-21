@@ -50,5 +50,18 @@ export const User = {
      */
     getCollection() {
         return getDB().collection('users');
+    },
+
+    /**
+     * Update user's team
+     * @param {string} userId 
+     * @param {string} teamName 
+     */
+    async updateTeam(userId, teamName) {
+        const db = getDB();
+        return await db.collection('users').updateOne(
+            { _id: new ObjectId(userId) },
+            { $set: { team: teamName } }
+        );
     }
 };

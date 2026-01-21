@@ -86,6 +86,7 @@ export const getProfile = catchAsync(async (req, res, next) => {
             email: user.email,
             age: user.age,
             role: user.role,
+            team: user.team || 'No team joined yet',
             createdAt: user.createdAt
         }
     });
@@ -103,4 +104,20 @@ export const logoutUser = (req, res) => {
         message: 'Logged out successfully! Please delete your token on the client side.'
     });
 };
+
+/**
+ * Join a team
+ * PATCH /api/users/join-team
+ */
+export const joinTeam = catchAsync(async (req, res, next) => {
+    const { teamName } = req.body;
+    const userId = req.user._id;
+
+    await User.updateTeam(userId, teamName);
+
+    res.status(200).json({
+        status: 'success',
+        message: `Successfully joined team: ${teamName}`
+    });
+});
 

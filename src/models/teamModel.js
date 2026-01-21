@@ -13,5 +13,15 @@ export const Team = {
     async findAll() {
         const db = getDB();
         return await db.collection('teams').find().toArray();
+    },
+
+    /**
+     * Find a team by its name
+     * @param {string} teamName 
+     * @returns {Promise<Object|null>}
+     */
+    async findByName(teamName) {
+        const db = getDB();
+        return await db.collection('teams').findOne({ teamName });
     }
 };

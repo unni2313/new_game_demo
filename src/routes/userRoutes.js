@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { registerUser, loginUser, getProfile, logoutUser } from '../controllers/userController.js';
+import { registerUser, loginUser, getProfile, logoutUser, joinTeam } from '../controllers/userController.js';
 import { registrationRules, loginRules, handleValidationErrors, checkDuplicateEmail, hashPassword, findUser, restrictRoleParameter } from '../middlewares/userMiddleware.js';
 import { protect } from '../middlewares/authMiddleware.js';
+import { checkTeamExists } from '../middlewares/teamMiddleware.js';
 
 const router = Router();
 
@@ -16,5 +17,8 @@ router.post('/logout', protect, logoutUser);
 
 // GET /api/users/profile (Protected)
 router.get('/profile', protect, getProfile);
+
+// PATCH /api/users/join-team (Protected)
+router.patch('/join-team', protect, checkTeamExists, joinTeam);
 
 export default router;
