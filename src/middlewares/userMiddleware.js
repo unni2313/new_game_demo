@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import { body, validationResult } from 'express-validator';
-import { User } from '../models/userModel.js';
+import { ObjectId } from 'mongodb';
+import { getDB } from '../config/db.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
@@ -69,11 +70,10 @@ export const handleValidationErrors = (req, res, next) => {
  * Middleware to check if a user with the given email already exists
  */
 export const checkDuplicateEmail = catchAsync(async (req, res, next) => {
-    const existingUser = await User.findByEmail(req.body.email);
+    const db = getDB();
+    const existingUser = await db.collection('users').findOne({ email: req.body.email });
 
-    if (existingUser) {
-        return next(new AppError('User with this email already exists', 400));
-    }
+    if (existingUser) return next(new AppError('User with this email already exists', 400));
 
     next();
 });
@@ -82,11 +82,10 @@ export const checkDuplicateEmail = catchAsync(async (req, res, next) => {
  * Middleware to find user by email and attach to request
  */
 export const findUser = catchAsync(async (req, res, next) => {
-    const user = await User.findByEmail(req.body.email);
+    const db = getDB();
+    const user = await db.collection('users').findOne({ email: req.body.email });
 
-    if (!user) {
-        return next(new AppError('Incorrect email or password', 401));
-    }
+    if (!user) return next(new AppError('Incorrect email or password', 401));
 
     req.user = user;
     next();

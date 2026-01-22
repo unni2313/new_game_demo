@@ -8,7 +8,7 @@ import morgan from 'morgan';
 dotenv.config();
 
 import { connectDB, closeDB } from './config/db.js';
-import { errorHandler, AppError } from './middlewares/errorMiddleware.js';
+import { errorHandler, AppError, responseHandler } from './middlewares/responseAndError.js';
 import { mongoSanitize } from './middlewares/sanitizationMiddleware.js';
 import userRoutes from './routes/userRoutes.js';
 import teamRoutes from './routes/teamRoutes.js';
@@ -39,6 +39,9 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize);
+
+// Response Handler Middleware (Attaches sendSuccess)
+app.use(responseHandler);
 
 // Implement CORS
 app.use(cors());

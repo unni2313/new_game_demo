@@ -1,7 +1,7 @@
 import { body } from 'express-validator';
 import { handleValidationErrors } from './userMiddleware.js';
 
-import { Team } from '../models/teamModel.js';
+import { getDB } from '../config/db.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
@@ -30,11 +30,11 @@ export const checkTeamExists = catchAsync(async (req, res, next) => {
         return next(new AppError('Please provide a team name', 400));
     }
 
-    const team = await Team.findByName(teamName);
 
-    if (!team) {
-        return next(new AppError('No team found with that name', 404));
-    }
+    const db = getDB();
+    const team = await db.collection('teams').findOne({ teamName });
+
+    if (!team) return next(new AppError('No team found with that name', 404));
 
     next();
 });

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
-import { User } from '../models/userModel.js';
+import { ObjectId } from 'mongodb';
+import { getDB } from '../config/db.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
@@ -22,11 +23,15 @@ export const protect = catchAsync(async (req, res, next) => {
 
     // 3) Check if user still exists
     // The decoded token contains the 'id' we put there when signing
-    const currentUser = await User.findById(decoded.id);
-
-    if (!currentUser) {
-        return next(new AppError('The user belonging to this token no longer exists.', 401));
+    const db = getDB();
+    let currentUser = null;
+    try {
+        currentUser = await db.collection('users').findOne({ _id: new ObjectId(decoded.id) });
+    } catch (err) {
+        currentUser = null;
     }
+
+    if (!currentUser) return next(new AppError('The user belonging to this token no longer exists.', 401));
 
     // GRANT ACCESS TO PROTECTED ROUTE
     req.user = currentUser;

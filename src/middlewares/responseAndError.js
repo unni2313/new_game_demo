@@ -4,6 +4,20 @@ import { AppError } from '../utils/AppError.js';
 export { AppError };
 
 /**
+ * Middleware to attach a standardized success response method
+ */
+export const responseHandler = (req, res, next) => {
+  res.sendSuccess = (statusCode, message, data) => {
+    res.status(statusCode).json({
+      status: 'success',
+      message,
+      data
+    });
+  };
+  next();
+};
+
+/**
  * Global error handling middleware
  */
 export const errorHandler = (err, req, res, next) => {

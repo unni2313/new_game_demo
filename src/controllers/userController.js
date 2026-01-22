@@ -1,11 +1,13 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { User } from '../models/userModel.js';
+import { ObjectId } from 'mongodb';
+import { getDB } from '../config/db.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
 const signToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
+    const strId = id && id.toString ? id.toString() : id;
+    return jwt.sign({ id: strId }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN
     });
 };
@@ -17,28 +19,26 @@ const signToken = (id) => {
 export const registerUser = catchAsync(async (req, res, next) => {
     const { name, email, age, password, role } = req.body;
 
-    const result = await User.create({
+    const db = getDB();
+    const result = await db.collection('users').insertOne({
         name,
         email,
         age: Number(age),
         password, // already hashed by middleware
-        role
+        role,
+        createdAt: new Date()
     });
 
     const token = signToken(result.insertedId);
 
     // Send response (without password)
-    res.status(201).json({
-        status: 'success',
+    res.sendSuccess(201, 'User registered successfully', {
+        userId: result.insertedId,
         token,
-        message: 'User registered successfully',
-        data: {
-            userId: result.insertedId,
-            name,
-            email,
-            age: Number(age),
-            role: role || 'user'
-        }
+        name,
+        email,
+        age: Number(age),
+        role: role || 'user'
     });
 });
 
@@ -58,15 +58,12 @@ export const loginUser = catchAsync(async (req, res, next) => {
     // 2) If everything ok, send token to client
     const token = signToken(user._id);
 
-    res.status(200).json({
-        status: 'success',
+    res.sendSuccess(200, 'Logged in successfully', {
+        userId: user._id,
         token,
-        data: {
-            userId: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role
-        }
+        name: user.name,
+        email: user.email,
+        role: user.role
     });
 });
 
@@ -78,17 +75,14 @@ export const getProfile = catchAsync(async (req, res, next) => {
     // The user is already attached to the request by the 'protect' middleware
     const user = req.user;
 
-    res.status(200).json({
-        status: 'success',
-        data: {
-            userId: user._id,
-            name: user.name,
-            email: user.email,
-            age: user.age,
-            role: user.role,
-            team: user.team || 'No team joined yet',
-            createdAt: user.createdAt
-        }
+    res.sendSuccess(200, 'User profile retrieved', {
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        age: user.age,
+        role: user.role,
+        team: user.team || 'No team joined yet',
+        createdAt: user.createdAt
     });
 });
 
@@ -99,10 +93,7 @@ export const getProfile = catchAsync(async (req, res, next) => {
 export const logoutUser = (req, res) => {
     // Note: Since we use JWT (stateless), 
     // real "logout" happens on the client by deleting the token.
-    res.status(200).json({
-        status: 'success',
-        message: 'Logged out successfully! Please delete your token on the client side.'
-    });
+    res.sendSuccess(200, 'Logged out successfully! Please delete your token on the client side.');
 };
 
 /**
@@ -113,11 +104,10 @@ export const joinTeam = catchAsync(async (req, res, next) => {
     const { teamName } = req.body;
     const userId = req.user._id;
 
-    await User.updateTeam(userId, teamName);
+    const db = getDB();
+    const filter = typeof userId === 'string' ? { _id: new ObjectId(userId) } : { _id: userId };
+    await db.collection('users').updateOne(filter, { $set: { team: teamName } });
 
-    res.status(200).json({
-        status: 'success',
-        message: `Successfully joined team: ${teamName}`
-    });
+    res.sendSuccess(200, `Successfully joined team: ${teamName}`);
 });
 
