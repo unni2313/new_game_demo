@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { createTeam, getAllTeams } from '../controllers/teamController.js';
 import { protect, protectedForAdmin } from '../middlewares/authMiddleware.js';
 import { teamRules, handleValidationErrors } from '../middlewares/teamMiddleware.js';
+import { requestHandler } from '../utils/requestHandler.js';
 
 const router = Router();
 
@@ -9,9 +10,9 @@ const router = Router();
 router.use(protect);
 
 // GET /api/teams - Accessible by both users and admins
-router.get('/', getAllTeams);
+router.get('/', requestHandler(getAllTeams));
 
 // POST /api/teams - Only Admin can create
-router.post('/', protectedForAdmin, teamRules, handleValidationErrors, createTeam);
+router.post('/', protectedForAdmin, teamRules, handleValidationErrors, requestHandler(createTeam));
 
 export default router;

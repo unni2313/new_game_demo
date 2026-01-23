@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import { ObjectId } from 'mongodb';
 import { getDB } from '../config/db.js';
 import { AppError } from '../utils/AppError.js';
-import { catchAsync } from '../utils/catchAsync.js';
+import { UserModel } from '../models/userModel.js';
 
 const signToken = (id) => {
     const strId = id && id.toString ? id.toString() : id;
@@ -16,91 +16,108 @@ const signToken = (id) => {
  * Register a new user
  * POST /api/users/register
  */
-export const registerUser = catchAsync(async (req, res, next) => {
+export const registerUser = async (req) => {
     const { name, email, age, password, role } = req.body;
 
-    const db = getDB();
-    const result = await db.collection('users').insertOne({
+    // Use the Model to structure the data
+    const newUser = UserModel({
         name,
         email,
-        age: Number(age),
-        password, // already hashed by middleware
-        role,
-        createdAt: new Date()
+        age,
+        password,
+        role
     });
+
+    const db = getDB();
+    const result = await db.collection('users').insertOne(newUser);
 
     const token = signToken(result.insertedId);
 
-    // Send response (without password)
-    res.sendSuccess(201, 'User registered successfully', {
-        userId: result.insertedId,
-        token,
-        name,
-        email,
-        age: Number(age),
-        role: role || 'user'
-    });
-});
+    // Return response (without password)
+    return {
+        statusCode: 201,
+        message: 'User registered successfully',
+        data: {
+            userId: result.insertedId,
+            token,
+            name,
+            email,
+            age: Number(age),
+            role: role || 'user'
+        }
+    };
+};
 
 /**
  * Login user
  * POST /api/users/login
  */
-export const loginUser = catchAsync(async (req, res, next) => {
+export const loginUser = async (req) => {
     const { password } = req.body;
     const user = req.user;
 
     // 1) Check if password is correct
     if (!(await bcrypt.compare(password, user.password))) {
-        return next(new AppError('Incorrect email or password', 401));
+        throw new AppError('Incorrect email or password', 401);
     }
 
     // 2) If everything ok, send token to client
     const token = signToken(user._id);
 
-    res.sendSuccess(200, 'Logged in successfully', {
-        userId: user._id,
-        token,
-        name: user.name,
-        email: user.email,
-        role: user.role
-    });
-});
+    return {
+        statusCode: 200,
+        message: 'Logged in successfully',
+        data: {
+            userId: user._id,
+            token,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        }
+    };
+};
 
 /**
  * Get user profile
  * GET /api/users/profile
  */
-export const getProfile = catchAsync(async (req, res, next) => {
+export const getProfile = async (req) => {
     // The user is already attached to the request by the 'protect' middleware
     const user = req.user;
 
-    res.sendSuccess(200, 'User profile retrieved', {
-        userId: user._id,
-        name: user.name,
-        email: user.email,
-        age: user.age,
-        role: user.role,
-        team: user.team || 'No team joined yet',
-        createdAt: user.createdAt
-    });
-});
+    return {
+        statusCode: 200,
+        message: 'User profile retrieved',
+        data: {
+            userId: user._id,
+            name: user.name,
+            email: user.email,
+            age: user.age,
+            role: user.role,
+            team: user.team || 'No team joined yet',
+            createdAt: user.createdAt
+        }
+    };
+};
 
 /**
  * Logout user
  * POST /api/users/logout
  */
-export const logoutUser = (req, res) => {
+export const logoutUser = async (req) => {
     // Note: Since we use JWT (stateless), 
     // real "logout" happens on the client by deleting the token.
-    res.sendSuccess(200, 'Logged out successfully! Please delete your token on the client side.');
+    return {
+        statusCode: 200,
+        message: 'Logged out successfully! Please delete your token on the client side.'
+    };
 };
 
 /**
  * Join a team
  * PATCH /api/users/join-team
  */
-export const joinTeam = catchAsync(async (req, res, next) => {
+export const joinTeam = async (req) => {
     const { teamName } = req.body;
     const userId = req.user._id;
 
@@ -108,6 +125,9 @@ export const joinTeam = catchAsync(async (req, res, next) => {
     const filter = typeof userId === 'string' ? { _id: new ObjectId(userId) } : { _id: userId };
     await db.collection('users').updateOne(filter, { $set: { team: teamName } });
 
-    res.sendSuccess(200, `Successfully joined team: ${teamName}`);
-});
+    return {
+        statusCode: 200,
+        message: `Successfully joined team: ${teamName}`
+    };
+};
 
