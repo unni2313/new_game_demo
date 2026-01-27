@@ -84,6 +84,22 @@ export const loginUser = async (req) => {
 export const getProfile = async (req) => {
     // The user is already attached to the request by the 'protect' middleware
     const user = req.user;
+    const db = getDB();
+
+    // Calculate total cumulative score from all games played by this user
+    const scoreData = await db.collection('games').aggregate([
+        { $match: { playerId: user._id } },
+        { $unwind: { path: '$overs', preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$overs.balls', preserveNullAndEmptyArrays: true } },
+        {
+            $group: {
+                _id: null,
+                totalScore: { $sum: '$overs.balls.runs' }
+            }
+        }
+    ]).toArray();
+
+    const totalScore = scoreData.length > 0 ? scoreData[0].totalScore : 0;
 
     return {
         statusCode: 200,
@@ -95,6 +111,7 @@ export const getProfile = async (req) => {
             age: user.age,
             role: user.role,
             team: user.team || 'No team joined yet',
+            totalScore: totalScore,
             createdAt: user.createdAt
         }
     };

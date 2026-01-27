@@ -40,13 +40,37 @@ Base URL: http://localhost:5000
    - Description: Confirmation endpoint for logout.
    - Header: Authorization: Bearer <token>
 
-6. GET /api/teams
+6. PATCH /api/users/join-team
+   - Description: Join a team. Updates user profile with team name.
+   - Header: Authorization: Bearer <token>
+   - Body: { teamName }
+
+7. GET /api/teams
    - Description: View all teams in the game.
    - Header: Authorization: Bearer <token>
 
+8. POST /api/teams/members
+   - Description: View all members of a specific team and their total scores played for that team.
+   - Header: Authorization: Bearer <token>
+   - Body: { teamId }
+
+9. POST /api/games/start
+   - Description: Start a new game session. User must be part of a team.
+   - Header: Authorization: Bearer <token>
+   - Body: { difficultyLevel, no_of_overs, totalRunsNeeded }
+
+10. PATCH /api/games/update-score
+   - Description: Record a ball (runs, wicket, angle). Automates overs.
+   - Header: Authorization: Bearer <token>
+   - Body: { matchId, runs, wicket, angle }
+
+11. GET /api/games/my-games
+    - Description: Retrieve all games played by the current user.
+    - Header: Authorization: Bearer <token>
+
 --- 👑 ADMIN ONLY ENDPOINTS (Admin Role Required) ---
 
-7. POST /api/teams
+12. POST /api/teams
    - Description: Create a new game team.
    - Header: Authorization: Bearer <token>
    - Body: { teamName, tagLine, scores, wins, draws, losts }

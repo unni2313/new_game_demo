@@ -3,7 +3,7 @@ import { registerUser, loginUser, getProfile, logoutUser, joinTeam } from '../co
 import { registrationRules, loginRules, handleValidationErrors, checkDuplicateEmail, hashPassword, findUser, restrictRoleParameter } from '../middlewares/userMiddleware.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { checkTeamExists } from '../middlewares/teamMiddleware.js';
-import { requestHandler } from '../utils/requestHandler.js';
+import { requestHandler } from '../middlewares/responseAndError.js';
 
 const router = Router();
 

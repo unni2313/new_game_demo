@@ -12,55 +12,31 @@ import { errorHandler, AppError, responseHandler } from './middlewares/responseA
 import { mongoSanitize } from './middlewares/sanitizationMiddleware.js';
 import userRoutes from './routes/userRoutes.js';
 import teamRoutes from './routes/teamRoutes.js';
+import gameRoutes from './routes/gameRoutes.js';
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-    console.log('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-    console.log(err.name, err.message);
-    process.exit(1);
-});
-
+// ... (other code)
 const app = express();
 const port = process.env.PORT || 5000;
 
 // 1) GLOBAL MIDDLEWARES
-// Set security HTTP headers
 app.use(helmet());
 
-// Development logging
-if (process.env.NODE_ENV?.trim() === 'development') {
+if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
-    console.log('Morgan logger initialized... 👀');
 }
 
-// Body parser, reading data from body into req.body
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-
-// Data sanitization against NoSQL query injection
-app.use(mongoSanitize);
-
-// Response Handler Middleware (Attaches sendSuccess)
-app.use(responseHandler);
-
-// Implement CORS
 app.use(cors());
-
-// 2) ROUTES
-app.get('/health', (req, res) => {
-    res.status(200).json({
-        status: 'success',
-        message: 'Server is healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    });
-});
+app.use(express.json());
+app.use(mongoSanitize);
 
 // User routes
 app.use('/api/users', userRoutes);
 
 // Team routes
 app.use('/api/teams', teamRoutes);
+
+// Game routes
+app.use('/api/games', gameRoutes);
 
 // Handle unhandled routes
 app.all(/(.*)/, (req, res, next) => {

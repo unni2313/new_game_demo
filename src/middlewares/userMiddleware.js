@@ -99,3 +99,4 @@ export const hashPassword = catchAsync(async (req, res, next) => {
     req.body.password = await bcrypt.hash(req.body.password, saltRounds);
     next();
 });
+

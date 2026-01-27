@@ -19,17 +19,19 @@ export const protect = catchAsync(async (req, res, next) => {
     }
 
     // 2) Verification token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let decoded;
+    try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+        if (err.name === 'TokenExpiredError') {
+            return next(new AppError('Your token has expired! Please log in again.', 401));
+        }
+        return next(new AppError('Invalid token. Please log in again.', 401));
+    }
 
     // 3) Check if user still exists
-    // The decoded token contains the 'id' we put there when signing
     const db = getDB();
-    let currentUser = null;
-    try {
-        currentUser = await db.collection('users').findOne({ _id: new ObjectId(decoded.id) });
-    } catch (err) {
-        currentUser = null;
-    }
+    const currentUser = await db.collection('users').findOne({ _id: new ObjectId(decoded.id) });
 
     if (!currentUser) return next(new AppError('The user belonging to this token no longer exists.', 401));
 
